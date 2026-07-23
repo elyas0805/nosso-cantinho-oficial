@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elyas & Laura ❤️</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div id="hearts-container"></div>
+<div class="container">
+
+    <h1>Elyas & Laura ❤️</h1>
+
+    <p class="frase">
+        "Você trouxe uma paz pra minha vida que eu nem sabia que precisava."
+    </p>
+
+    <h2>Juntos há</h2>
+
+    <div id="contador"></div>
+
+    <div class="menu">
+
+        <button onclick="mostrarAba('inicio')">🏠 Início</button>
+
+        <button onclick="mostrarAba('cartinhas')">💌 Cartinhas</button>
+
+        <button onclick="mostrarAba('galeria')">📸 Galeria</button>
+
+        <button onclick="mostrarAba('historia')">📖 História</button>
+
+        <button onclick="mostrarAba('sonhos')">✨ Sonhos</button>
+
+        <button onclick="mostrarAba('musica')">🎵 Música</button>
+
+    </div>
+
+    <div id="inicio" class="aba">
+
+        <h2>❤️ Bem-vinda</h2>
+
+        <p>
+            Nosso cantinho especial ❤️
+        </p>
+
+    </div>
+
+    <div id="cartinhas" class="aba">
+
+        <h2>💌 Cartinhas</h2>
+
+        <textarea
+            id="cartaInput"
+            placeholder="Escreva uma cartinha para o futuro..."
+        ></textarea>
+
+        <br>
+
+        <button id="salvarCarta">
+            💌 Salvar Carta
+        </button>
+
+        <div id="listaCartas"></div>
+
+    </div>
+
+    <div id="galeria" class="aba">
+
+    <h2>📸 Galeria</h2>
+
+    <input
+        type="file"
+        id="fotoInput"
+        accept="image/*"
+    >
+
+    <br><br>
+
+    <div id="galeriaFotos"></div>
+
+</div>
+
+    <div id="historia" class="aba">
+
+    <h2>📖 Nossa História</h2>
+
+    <input
+        type="date"
+        id="dataHistoria"
+    >
+
+    <br><br>
+
+    <textarea
+        id="textoHistoria"
+        placeholder="O que aconteceu nesse dia?"
+    ></textarea>
+
+    <br>
+
+    <button id="salvarHistoria">
+        ❤️ Adicionar Memória
+    </button>
+
+    <div id="listaHistoria"></div>
+
+</div>
+
+    <div id="sonhos" class="aba">
+
+    <h2>✨ Nossos Sonhos</h2>
+
+    <input
+        type="text"
+        id="sonhoInput"
+        placeholder="Adicionar um sonho..."
+    >
+
+    <button id="salvarSonho">
+        ✨ Adicionar
+    </button>
+
+    <div id="listaSonhos"></div>
+
+</div>
+
+    <div id="musica" class="aba">
+
+    <h2>🎵 Nossa Trilha Sonora</h2>
+
+    <input
+        type="text"
+        id="musicaInput"
+        placeholder="Nome da música e artista..."
+    >
+
+    <button id="salvarMusica">
+        🎵 Adicionar
+    </button>
+
+    <div id="listaMusicas"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseUrl =
+"https://gonyvvjfpbwoawibjjhw.supabase.co";
+const supabaseKey = "sb_publishable_RA0VlCdQPK72J1__TaJnYA_yy5cyCUM";
+
+const banco = window.supabase.createClient(
+    supabaseUrl,
+    supabaseKey
+);
+function atualizarContador() {
+
+    const inicio = new Date(2026, 4, 8);
+
+    const agora = new Date();
+
+    const diferenca = agora - inicio;
+
+    const dias = Math.floor(
+        diferenca / (1000 * 60 * 60 * 24)
+    );
+
+    const horas = Math.floor(
+        (diferenca % (1000 * 60 * 60 * 24))
+        /
+        (1000 * 60 * 60)
+    );
+
+    const minutos = Math.floor(
+        (diferenca % (1000 * 60 * 60))
+        /
+        (1000 * 60)
+    );
+
+    document.getElementById("contador").innerHTML =
+        `${dias} dias<br>${horas} horas<br>${minutos} minutos ❤️`;
+
+}
+
+atualizarContador();
+
+setInterval(atualizarContador, 1000);
+
+function mostrarAba(id){
+
+    document
+    .querySelectorAll(".aba")
+    .forEach(aba => {
+
+        aba.style.display = "none";
+
+    });
+
+    document
+    .getElementById(id)
+    .style.display = "block";
+
+}
+const botaoCarta =
+document.getElementById("salvarCarta");
+
+if(botaoCarta){
+
+    botaoCarta.addEventListener(
+        "click",
+        salvarCarta
+    );
+
+}
+
+async function salvarCarta(){
+
+    const texto =
+    document.getElementById(
+        "cartaInput"
+    ).value;
+
+    if(texto.trim() === "")
+        return;
+
+    const { error } =
+    await banco
+    .from("cartas")
+    .insert([
+        {
+            mensagem: texto
+        }
+    ]);
+
+    if(error){
+
+        console.error(
+            "Erro ao salvar:",
+            error
+        );
+
+        return;
+
+    }
+
+    document.getElementById(
+        "cartaInput"
+    ).value = "";
+
+    carregarCartas();
+
+}
+
+async function carregarCartas(){
+
+    const lista =
+    document.getElementById(
+        "listaCartas"
+    );
+
+    if(!lista) return;
+
+    lista.innerHTML = "";
+
+    const {
+        data,
+        error
+    } =
+    await banco
+    .from("cartas")
+    .select("*")
+    .order(
+        "created_at",
+        {
+            ascending: false
+        }
+    );
+
+    if(error){
+
+        console.error(
+            "Erro ao carregar:",
+            error
+        );
+
+        return;
+
+    }
+
+    data.forEach(carta => {
+
+        lista.innerHTML += `
+            <div class="carta">
+                💌 ${carta.mensagem}
+            </div>
+        `;
+
+    });
+}
+carregarCartas();
+const fotoInput =
+document.getElementById("fotoInput");
+
+if(fotoInput){
+
+    fotoInput.addEventListener(
+        "change",
+        salvarFoto
+    );
+
+}
+
+async function salvarFoto(event){
+
+    const arquivo =
+    event.target.files[0];
+
+    if(!arquivo) return;
+
+    const nomeArquivo =
+    Date.now() + "_" + arquivo.name;
+
+    const { error: erroUpload } =
+    await banco.storage
+    .from("fotos")
+    .upload(
+        "fotos/" + nomeArquivo,
+        arquivo
+    );
+
+    if(erroUpload){
+
+        console.error(
+            "Erro ao enviar foto:",
+            erroUpload
+        );
+
+        return;
+
+    }
+
+    const { data } =
+    banco.storage
+    .from("fotos")
+    .getPublicUrl(
+        "fotos/" + nomeArquivo
+    );
+
+    const { error: erroBanco } =
+    await banco
+    .from("fotos")
+    .insert([
+        {
+            url: data.publicUrl
+        }
+    ]);
+
+    if(erroBanco){
+
+        console.error(
+            "Erro ao salvar URL:",
+            erroBanco
+        );
+
+        return;
+
+    }
+
+    carregarFotos();
+
+}
+        carregarFotos();
+
+    ;
+
+    
+        
+    
+
+
+
+async function carregarFotos(){
+
+    const galeria =
+    document.getElementById(
+        "galeriaFotos"
+    );
+
+    if(!galeria) return;
+
+    galeria.innerHTML = "";
+
+    const {
+        data,
+        error
+    } =
+    await banco
+    .from("fotos")
+    .select("*")
+    .order(
+        "created_at",
+        {
+            ascending: false
+        }
+    );
+
+    if(error){
+
+        console.error(
+            "Erro ao carregar:",
+            error
+        );
+
+        return;
+
+    }
+
+    data.forEach(foto => {
+
+      galeria.innerHTML += `
+    <div class="foto">
+        <img src="${foto.url}">
+
+        <button onclick="excluirFoto('${foto.id}','${foto.url}')">
+            🗑️ Excluir
+        </button>
+    </div>
+`;
+
+    });
+
+}
+
+carregarFotos();
+carregarFotos();
+const botaoHistoria =
+document.getElementById(
+    "salvarHistoria"
+);
+
+if(botaoHistoria){
+
+    botaoHistoria.addEventListener(
+        "click",
+        salvarHistoria
+    );
+
+}
+
+async function salvarHistoria(){
+
+    const data =
+    document.getElementById(
+        "dataHistoria"
+    ).value;
+
+    const texto =
+    document.getElementById(
+        "textoHistoria"
+    ).value;
+
+    if(!data || !texto)
+    return;
+
+    const { error } =
+    await banco
+    .from("historias")
+    .insert([
+        {
+            data: data,
+            texto: texto
+        }
+    ]);
+
+    if(error){
+
+        console.error(
+            "Erro ao salvar:",
+            error
+        );
+
+        return;
+
+    }
+
+    document.getElementById(
+        "textoHistoria"
+    ).value = "";
+
+    carregarHistoria();
+
+}
+async function carregarHistoria(){
+
+    const lista =
+    document.getElementById(
+        "listaHistoria"
+    );
+
+    if(!lista) return;
+
+    lista.innerHTML = "";
+
+    const {
+        data,
+        error
+    } =
+    await banco
+    .from("historias")
+    .select("*")
+    .order(
+        "created_at",
+        {
+            ascending:false
+        }
+    );
+
+    if(error){
+
+        console.error(
+            error
+        );
+
+        return;
+
+    }
+
+    data.forEach(memoria => {
+
+        lista.innerHTML += `
+            <div class="memoria">
+
+                <div class="memoria-data">
+                    ❤️ ${memoria.data}
+                </div>
+
+                ${memoria.texto}
+
+            </div>
+        `;
+
+    });
+
+}
+
+carregarHistoria();
+const botaoSonho =
+document.getElementById(
+    "salvarSonho"
+);
+
+if(botaoSonho){
+
+    botaoSonho.addEventListener(
+        "click",
+        salvarSonho
+    );
+
+}
+
+async function salvarSonho(){
+
+    const texto =
+    document.getElementById(
+        "sonhoInput"
+    ).value;
+
+    if(!texto.trim())
+    return;
+
+    const { error } =
+    await banco
+    .from("sonhos")
+    .insert([
+        {
+            texto: texto,
+            feito: false
+        }
+    ]);
+
+    if(error){
+
+        console.error(
+            "Erro ao salvar:",
+            error
+        );
+
+        return;
+
+    }
+
+    document.getElementById(
+        "sonhoInput"
+    ).value = "";
+
+    carregarSonhos();
+
+}
+
+
+async function carregarSonhos(){
+
+    const lista =
+    document.getElementById(
+        "listaSonhos"
+    );
+
+    if(!lista) return;
+
+    lista.innerHTML = "";
+
+    const {
+        data,
+        error
+    } =
+    await banco
+    .from("sonhos")
+    .select("*")
+    .order(
+        "created_at",
+        {
+            ascending:true
+        }
+    );
+
+    if(error){
+
+        console.error(
+            error
+        );
+
+        return;
+
+    }
+
+    data.forEach(sonho => {
+
+        lista.innerHTML += `
+            <div class="sonho">
+
+                <input
+                type="checkbox"
+                ${sonho.feito ? "checked" : ""}
+                onchange="alternarSonho(${sonho.id}, ${sonho.feito})">
+
+                <span>
+                    ${sonho.texto}
+                </span>
+
+            </div>
+        `;
+
+    });
+
+}
+
+
+
+async function alternarSonho(id, feito){
+
+    const { error } =
+    await banco
+    .from("sonhos")
+    .update({
+        feito: !feito
+    })
+    .eq("id", id);
+
+    if(error){
+
+        console.error(
+            error
+        );
+
+        return;
+
+    }
+
+    carregarSonhos();
+
+}
+
+carregarSonhos();
+const botaoMusica =
+document.getElementById(
+    "salvarMusica"
+);
+
+if(botaoMusica){
+
+    botaoMusica.addEventListener(
+        "click",
+        salvarMusica
+    );
+
+}
+
+async function salvarMusica(){
+
+    const texto =
+    document.getElementById(
+        "musicaInput"
+    ).value;
+
+    if(!texto.trim())
+    return;
+
+    const { error } =
+    await banco
+    .from("musicas")
+    .insert([
+        {
+            musica: texto
+        }
+    ]);
+
+    if(error){
+
+        console.error(
+            "Erro ao salvar:",
+            error
+        );
+
+        return;
+
+    }
+
+    document.getElementById(
+        "musicaInput"
+    ).value = "";
+
+    carregarMusicas();
+
+}
+
+async function carregarMusicas(){
+
+    const lista =
+    document.getElementById(
+        "listaMusicas"
+    );
+
+    if(!lista) return;
+
+    lista.innerHTML = "";
+
+    const {
+        data,
+        error
+    } =
+    await banco
+    .from("musicas")
+    .select("*")
+    .order(
+        "created_at",
+        {
+            ascending:false
+        }
+    );
+
+    if(error){
+
+        console.error(
+            "Erro ao carregar:",
+            error
+        );
+
+        return;
+
+    }
+
+    data.forEach(musica => {
+
+        lista.innerHTML += `
+            <div class="musica">
+                🎶 ${musica.musica}
+            </div>
+        `;
+
+    });
+
+}
+
+
+carregarMusicas();
+function criarCoracao(){
+
+    const coracao =
+    document.createElement("div");
+
+    coracao.classList.add(
+        "heart-fall"
+    );
+
+   const coracoes = [
+    "💖",
+    "💕",
+    "💗",
+    "💝"
+];
+
+coracao.innerHTML =
+coracoes[
+    Math.floor(
+        Math.random() *
+        coracoes.length
+    )
+];
+
+    coracao.style.left =
+        Math.random() * 100 + "%";
+
+    coracao.style.animationDuration =
+        (5 + Math.random() * 5) + "s";
+
+    document
+    .getElementById(
+        "hearts-container"
+    )
+    .appendChild(coracao);
+
+    setTimeout(() => {
+
+        coracao.remove();
+
+    },10000);
+
+}
+
+setInterval(
+    criarCoracao,
+    600
+);
+async function excluirFoto(id, url){
+
+    const nomeArquivo =
+    url.split("/fotos/")[1];
+
+    const { error: erroStorage } =
+    await banco.storage
+    .from("fotos")
+    .remove([
+        "fotos/" + nomeArquivo
+    ]);
+
+    if(erroStorage){
+
+        console.error(
+            erroStorage
+        );
+
+        return;
+
+    }
+
+    const { error: erroBanco } =
+    await banco
+    .from("fotos")
+    .delete()
+    .eq("id", id);
+
+    if(erroBanco){
+
+        console.error(
+            erroBanco
+        );
+
+        return;
+
+    }
+
+    carregarFotos();
+
+}
+</script>
+
+</body>
+</html>
